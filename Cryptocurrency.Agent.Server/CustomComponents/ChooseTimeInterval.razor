@@ -1,0 +1,47 @@
+﻿@typeparam TEnumData 
+
+<div class="row">
+    <label for="interv" class="col-sm-1">Choose interval</label>
+    <select id="interv" class="form-control col-sm-1 col-md-2" @onchange=HandleChangeIntervalCallback>
+        @if (_isConnected == false)
+        {
+            <option value="OneDay">OneDay</option>
+        }
+        else
+        {
+            @foreach (var interlal in IntervalsList)
+            {
+                if (interlal.ToString() == CurrentInterval)
+                {
+                    <option value="@interlal" selected>@interlal</option>
+                }
+                else
+                {
+                    <option value="@interlal">@interlal</option>
+                }
+            }
+        }
+    </select>
+</div>
+
+
+@code {
+    [Parameter]
+    public IEnumerable<TEnumData> IntervalsList { get; set; }
+
+    [Parameter]
+    public string CurrentInterval { get; set; }
+
+    [Parameter]
+    public EventCallback<ChangeEventArgs> HandleChangeIntervalCallback { get; set; }
+
+    private bool _isConnected = false;
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _isConnected = true;
+        }
+    }
+}

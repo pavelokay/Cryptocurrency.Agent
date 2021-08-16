@@ -1,0 +1,21 @@
+﻿@inherits LayoutComponentBase
+
+<div class="page">
+    <div class="sidebar">
+        <NavMenu />
+    </div>
+
+    <div class="main">
+        <div class="top-row px-4 searchbar">
+            <SearchSymbol/>
+            <HeaderCoinsList/>
+        </div>
+
+        <div class="content px-4 main-content">
+            @Body
+        </div>
+    </div>
+</div>
+<div class="footer">
+    <FooterLayout />
+</div>

@@ -1,0 +1,109 @@
+﻿@using Binance.Net.Interfaces
+@using Bitfinex.Net.Objects
+@using Coinbase.Pro.Models
+
+@inject BinanceDataProvider _binanceDataProvider
+@inject BitfinexDataProvider _bitfinexDataProvider
+@inject NavigationManager NavigationManager
+
+<div class="row">
+    <div class="col-sm-12">
+        <input list="" id="symbol-choice" name="symbol-choice" class="form-control mb-2" placeholder="Find symbol" autocomplete="off" spellcheck="false" 
+               @oninput="@HandleChangeSymbol" 
+               @onfocusout="OnFocusOutTickerChange"
+               />
+        <datalist id="symbol-tickers" class="tickers-datalist @(_inputSymbolChoiceClass ?  "tickers-datalist-visible" : "")">
+            @if (_visibleTickers != null)
+            {
+                @foreach (var item in _visibleTickers)
+                    {
+                        <option value="@item.Exchange @item.Symbol" @onclick="@(() => HandleValidSubmit(item))">@item.Symbol @item.Exchange</option>
+                    }
+            }
+        </datalist>
+    </div>
+</div>
+
+@code {
+    private IList<GeneralTickerData> _tickers = new List<GeneralTickerData>();
+    private string _filter;
+    private bool _inputSymbolChoiceClass = false;
+    private IEnumerable<GeneralTickerData> _visibleTickers;
+
+    private IList<IBinanceTick> _binanceTickersData = new List<IBinanceTick>();
+    private IList<BitfinexSymbolOverview> _bitfinexTickersData = new List<BitfinexSymbolOverview>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var binanceResult = await _binanceDataProvider.Get24HPrices();
+        if (binanceResult)
+        {
+            _binanceTickersData = binanceResult.Data.ToList();
+        }
+        var bitfinexResult = await _bitfinexDataProvider.Get24HPrices();
+        if (binanceResult)
+        {
+            _bitfinexTickersData = bitfinexResult.Data.ToList();
+        }
+
+        //_stats = await _coinbaseDataProvider.GetCoinbase24HPrices();
+
+        for (var i = 0; i < _binanceTickersData.Count(); i++)
+        {
+            _tickers.Add(new GeneralTickerData()
+            {
+                Symbol = _binanceTickersData[i].Symbol,
+                Exchange = "Binance",
+            });
+        }
+
+        for (var i = 0; i < _bitfinexTickersData.Count(); i++)
+        {
+            _tickers.Add(new GeneralTickerData()
+            {
+                Symbol = _bitfinexTickersData[i].Symbol.Substring(1),
+                Exchange = "Bitfinex",
+            });
+        }
+    }
+
+    private void HandleChangeSymbol(ChangeEventArgs args)
+    {
+
+        _filter = args.Value.ToString();
+        _visibleTickers = _tickers.Where(t => t.Symbol.StartsWith(_filter, StringComparison.OrdinalIgnoreCase));
+        _inputSymbolChoiceClass = true;
+        //_visibleTickers = _tickers.Where(t => IsVisible(t));
+        //InvokeAsync(StateHasChanged);
+    }
+
+    //private bool IsVisible(GeneralTickerData item)
+    //{
+    //    if (string.IsNullOrEmpty(_filter))
+    //    {
+    //        return true;
+    //    }
+    //    if (item.Symbol.StartsWith(_filter, StringComparison.OrdinalIgnoreCase))
+    //    {
+    //        return true;
+    //    }
+    //    return false;
+    //}
+
+    private async Task OnFocusOutTickerChange(FocusEventArgs args)
+    {
+        await Task.Delay(150);
+        _inputSymbolChoiceClass = false;
+    }
+
+    private void HandleValidSubmit(GeneralTickerData ticker)
+    {
+        _inputSymbolChoiceClass = false;
+        if (ticker == null)
+        {
+            return;
+        }
+        NavigationManager.NavigateTo("symbols/" + ticker.Exchange.ToUpper() + "/" + ticker.Symbol, true);
+    }
+
+}

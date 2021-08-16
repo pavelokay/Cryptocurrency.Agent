@@ -1,0 +1,135 @@
+﻿@page "/cryptocurrencies/{symbol?}"
+
+@using Binance.Net.Interfaces
+@using Bitfinex.Net.Objects
+@using Coinbase.Pro.Models
+@using CryptoExchange.Net.Sockets
+
+@implements IAsyncDisposable
+
+@inject BinanceDataProvider _binanceDataProvider
+@inject BitfinexDataProvider _bitfinexDataProvider
+@*@inject CoinbaseDataProvider _coinbaseDataProvider*@
+
+<div class="coins-data">
+    <h3>24h coins data</h3>
+    <p>Prices shows in USD. Click on symbol to show chart</p>
+    @if (_tickers.Any())
+    {
+        <CryptocurrencyTable Items="_tickers" Mode="tickers" />
+    }
+    else
+    {
+        <div class="coins-data-loading">
+            <div class="spinner"></div>
+        </div>
+    }
+</div>
+
+@code
+{
+    [Parameter]
+    public string Symbol { get; set; }
+    private IList<GeneralTickerData> _tickers = new List<GeneralTickerData>();
+
+    private IList<IBinanceTick> _binanceTickersData = new List<IBinanceTick>();
+    private UpdateSubscription _subscription;
+
+    private IList<BitfinexSymbolOverview> _bitfinexTickersData = new List<BitfinexSymbolOverview>();
+
+    //private IList<Stats> _stats = new List<Stats>();
+
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        //Symbol = Symbol ?? "btc";
+        var binanceResult = await _binanceDataProvider.Get24HPrices();
+        if (binanceResult)
+        {
+            _binanceTickersData = binanceResult.Data.ToList();
+        }
+        var bitfinexResult = await _bitfinexDataProvider.Get24HPrices();
+        if (binanceResult)
+        {
+            _bitfinexTickersData = bitfinexResult.Data.ToList();
+        }
+
+        //_stats = await _coinbaseDataProvider.GetCoinbase24HPrices();
+
+        var subResult = await _binanceDataProvider.SubscribeAllTickerUpdates(HandleTickUpdates);
+        if (subResult)
+        {
+            _subscription = subResult.Data;
+        }
+
+        //_totalPageCount = (int)(Math.Ceiling((double)_ticks.Count() / _pageSize));
+        //_startPageIndex = Math.Max(_currentPageNumber - 4, 1);
+        //_endPageIndex = Math.Min(_currentPageNumber + 4, _totalPageCount);
+
+        //HandleChangePage(1);
+        for (var i = 0; i < _binanceTickersData.Count(); i++)
+        {
+            _tickers.Add(new GeneralTickerData()
+            {
+                Symbol = _binanceTickersData[i].Symbol,
+                Exchange = "Binance",
+                Open = _binanceTickersData[i].OpenPrice,
+                High = _binanceTickersData[i].HighPrice,
+                Low = _binanceTickersData[i].LowPrice,
+                LastPrice = _binanceTickersData[i].LastPrice,
+                BaseVolume = _binanceTickersData[i].BaseVolume,
+                CloseTime = _binanceTickersData[i].CloseTime,
+                TotalTrades = _binanceTickersData[i].TotalTrades,
+                OpenTime = _binanceTickersData[i].OpenTime,
+                PriceChange = _binanceTickersData[i].PriceChange,
+                PriceChangePercent = _binanceTickersData[i].PriceChangePercent
+            });
+        }
+
+        for (var i = 0; i < _bitfinexTickersData.Count(); i++)
+        {
+            _tickers.Add(new GeneralTickerData()
+            {
+                Symbol = _bitfinexTickersData[i].Symbol,
+                Exchange = "Bitfinex",
+                Open = _bitfinexTickersData[i].LastPrice - _bitfinexTickersData[i].DailyChange,
+                High = _bitfinexTickersData[i].High,
+                Low = _bitfinexTickersData[i].Low,
+                LastPrice = _bitfinexTickersData[i].LastPrice,
+                BaseVolume = _bitfinexTickersData[i].Volume,
+                PriceChange = _bitfinexTickersData[i].DailyChange,
+                PriceChangePercent = _bitfinexTickersData[i].DailyChangePercentage * 100
+            });
+        }
+        if (Symbol != "all")
+        {
+            _tickers = _tickers.Where(t => t.Symbol.Contains(Symbol)).ToList();
+        }
+    }
+
+    private void HandleTickUpdates(IEnumerable<IBinanceTick> ticks)
+    {
+        foreach (var tick in ticks)
+        {
+            var symbol = _tickers.SingleOrDefault(t => t.Symbol == tick.Symbol);
+            if (symbol != null)
+            {
+                symbol.PriceChangePercent = tick.PriceChangePercent;
+                symbol.LastPrice = tick.LastPrice;
+                symbol.PriceChange = tick.PriceChange;
+                symbol.BaseVolume = tick.BaseVolume;
+            }
+        }
+
+        InvokeAsync(StateHasChanged);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_subscription != null)
+        {
+            await _binanceDataProvider.Unsubscribe(_subscription);
+        }
+    }
+}

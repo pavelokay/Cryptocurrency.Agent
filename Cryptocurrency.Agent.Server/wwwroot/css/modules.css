@@ -1,0 +1,231 @@
+/*GENERAL*/
+body, html {
+  height: 100%;
+  margin: 0px; }
+
+.main-content {
+  position: relative; }
+
+.spinner {
+  border: 12px solid silver;
+  border-radius: 50%;
+  border-top: 12px solid #6403c8;
+  width: 60px;
+  height: 60px;
+  animation: spin 700ms linear infinite;
+  top: 50%;
+  left: 50%;
+  position: absolute; }
+  .spinner__header {
+    border: 6px solid silver;
+    border-top: 6px solid #6403c8;
+    width: 30px;
+    height: 30px;
+    top: 20%; }
+
+.cursor-pointer {
+  cursor: pointer; }
+
+.cursor-default {
+  cursor: default !important; }
+
+[list]::-webkit-calendar-picker-indicator {
+  display: none; }
+
+/*HEADER*/
+.header-list {
+  margin-left: 65px;
+  min-height: 100%; }
+
+.header-list-card {
+  min-width: 165px;
+  border-bottom: none;
+  border-top: none;
+  font-size: 14px;
+  min-height: 100%;
+  padding-top: 3px;
+  padding-left: 3px;
+  padding-right: 3px;
+  padding-bottom: 3px; }
+  .header-list-card:hover {
+    background-color: rgba(165, 165, 165, 0.6); }
+  .header-list-card-body {
+    padding: 0; }
+  .header-list-card-title {
+    margin-bottom: 1px;
+    font-weight: normal;
+    font-size: 16px;
+    padding-bottom: 8px; }
+  .header-list-card-text {
+    /*margin-bottom: 1px;*/ }
+
+/*INDEX*/
+.chart-logo-img {
+  width: 100%;
+  min-height: 400px; }
+
+.app-info {
+  font-size: 18px; }
+
+/*SEARCHBAR*/
+.searchbar {
+  justify-content: flex-start; }
+
+.tickers-datalist {
+  position: absolute;
+  background-color: #343a40;
+  font-family: sans-serif;
+  font-size: 0.8rem;
+  width: 100%;
+  left: 15px;
+  top: 45px;
+  max-height: 600px;
+  overflow-y: scroll;
+  z-index: 10; }
+  .tickers-datalist-visible {
+    display: block; }
+  .tickers-datalist option {
+    background-color: #202020;
+    padding: 4px;
+    margin-bottom: 1px;
+    cursor: pointer;
+    color: white; }
+    .tickers-datalist option:hover {
+      background-color: #B2B5BE;
+      color: black; }
+
+/*SYMBOLS*/
+.last-klin-data-loading {
+  width: 100%;
+  min-height: 90px;
+  max-height: 90px; }
+
+.symbols-last-klin {
+  font-size: 16px; }
+  .symbols-last-klin-price {
+    font-size: 20px;
+    font-weight: 500; }
+  .symbols-last-klin-open {
+    margin-left: 30%;
+    margin-right: 10px; }
+  .symbols-last-klin-volume {
+    margin-right: 10px; }
+
+/*STOCK CHART*/
+.myChart {
+  position: relative;
+  /*border: 1px solid lightgray;
+    border-radius: 2px;*/
+  box-shadow: 0 0 3px 0 gray;
+  /*    left: 0;
+    top: 0;*/
+  width: 95%;
+  height: 100%;
+  min-height: 650px;
+  max-width: 1500px;
+  max-height: 720px;
+  margin-bottom: 10px; }
+  .myChart-loading {
+    /*border: 1px solid lightgray;
+        border-radius: 2px;*/
+    box-shadow: 0 0 3px 0 gray;
+    position: relative;
+    width: 95%;
+    height: 100%;
+    min-height: 650px;
+    max-width: 1500px;
+    max-height: 720px;
+    background-color: white;
+    margin-bottom: 10px; }
+
+.chart-legend {
+  position: absolute;
+  left: 12px;
+  top: 12px;
+  z-index: 100;
+  font-size: 16px;
+  line-height: 18px;
+  font-weight: 300; }
+
+.go-to-realtime-button {
+  width: 27px;
+  height: 27px;
+  position: absolute;
+  display: none;
+  padding: 7px;
+  box-sizing: border-box;
+  font-size: 10px;
+  border-radius: 50%;
+  text-align: center;
+  z-index: 1000;
+  color: #B2B5BE;
+  background: rgba(250, 250, 250, 0.95);
+  box-shadow: 0 2px 5px 0 rgba(117, 134, 150, 0.45); }
+
+.choose-chart-type {
+  display: flex; }
+  .choose-chart-type button {
+    margin-right: 10px; }
+    .choose-chart-type button:hover {
+      background-color: rgba(117, 134, 150, 0.45); }
+    .choose-chart-type button:focus {
+      box-shadow: none; }
+
+.selected-chart {
+  background-color: #343a40;
+  color: white; }
+
+/*CRYPTOCURRENCIES*/
+.coins-data-loading {
+  width: 100%;
+  min-height: 700px;
+  max-height: 700px; }
+
+.coins-data a span {
+  color: gray; }
+  .coins-data a span:hover {
+    color: blueviolet; }
+
+.pagination-row {
+  margin-left: 30px; }
+  .pagination-row button {
+    color: black; }
+    .pagination-row button:focus {
+      box-shadow: none; }
+  .pagination-row .active .page-link {
+    background-color: #343a40;
+    border-color: #343a40; }
+
+.pagination-prev-button {
+  margin-right: 10px; }
+
+.pagination-next-button {
+  margin-left: 10px; }
+
+/*FOOTER*/
+.copyright {
+  padding: 15px 0;
+  /*margin-top: 55px;*/
+  background-color: #202020; }
+  .copyright span, .copyright a {
+    color: #878787;
+    -webkit-transition: all 0.3s linear;
+    -o-transition: all 0.3s linear;
+    transition: all 0.3s linear; }
+  .copyright .copyright-menu ul {
+    text-align: right;
+    margin: 0; }
+  .copyright .copyright-menu li {
+    display: inline-block;
+    padding-left: 20px; }
+    .copyright .copyright-menu li span:hover {
+      color: #6403c8; }
+  .copyright-year {
+    line-height: 2.5em; }
+
+/*ANIMATION*/
+@keyframes spin {
+  0% {
+    transform: rotate(0deg); }
+  100% {
+    transform: rotate(360deg); } }

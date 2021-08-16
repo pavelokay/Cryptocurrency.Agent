@@ -1,0 +1,44 @@
+﻿@page "/cryptocurrencies"
+
+@*@implements IAsyncDisposable*@
+
+@inject CoinMarketCapDataProvider _coinMarketCapDataProvider
+
+<div class="coins-data">
+    <h3>Overall cryptocurrencies data</h3>
+    <p>Prices shows in USD. Click on coin to show all tickers</p>
+    @if (_currencies.Any())
+    {
+      <CryptocurrencyTable Items="_currencies" Mode="symbols"/>  
+    }
+    else
+    {
+        <div class="coins-data-loading">
+            <div class="spinner"></div>
+        </div>
+    }
+</div>
+
+@code
+{
+    private IList<CryptocurrencyCoinMarketData> _currencies = new List<CryptocurrencyCoinMarketData>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var coinMarketCapResult = await _coinMarketCapDataProvider.GetCryptocurrenciesList();
+        if (coinMarketCapResult != null)
+        {
+            _currencies = coinMarketCapResult;
+        }
+
+    }
+
+
+    //public async ValueTask DisposeAsync()
+    //{
+    //    if (_subscription != null)
+    //    {
+    //        await _binanceDataProvider.Unsubscribe(_subscription);
+    //    }
+    //}
+}

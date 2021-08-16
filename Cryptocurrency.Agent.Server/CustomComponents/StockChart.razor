@@ -1,0 +1,245 @@
+﻿@using Binance.Net.Interfaces
+@using Binance.Net.Enums
+@using Cryptocurrency.Agent.Server.JsInteropClasses
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+
+@implements IDisposable
+
+@inject IJSRuntime JS;
+@inject ProtectedSessionStorage _protectedSessionStore
+
+<div class="mb-3 choose-chart-type">
+    @foreach (var type in _chartTypes)
+    {
+        Func<string, Task> f;
+        if (type == "line" || type == "area")
+        {
+            f = RedrawLine;
+        }
+        else
+        {
+            f = RedrawKlin;
+        }
+        if (_currentChartType == type)
+        {
+            <button class="btn btn-outline-dark selected-chart" @onclick="@(e => f(type))">@type Chart</button>
+        }
+        else
+        {
+            <button class="btn btn-outline-dark" @onclick="@(e => f(type))">@type Chart</button>
+        }
+    }
+</div>
+@if (Klines.Any())
+{
+    <div id="myChart" class="myChart" @ref="_chartElement"></div>
+}
+else
+{
+    <div class="myChart-loading">
+        <div class="spinner"></div>
+    </div>
+}
+@code {
+    [Parameter]
+    public Symbols ParentRef { get; set; }
+    [Parameter]
+    public List<KlinesData> Klines { get; set; }
+    [Parameter]
+    public bool InDayData { get; set; }
+    [Parameter]
+    public string Interval { get; set; }
+    [Parameter]
+    public string Pair { get; set; }
+    [Parameter]
+    public StreamKlinData LastKlin { get; set; }
+    [Parameter]
+    public string Exchange { get; set; }
+
+
+    private List<string> _chartTypes = new List<string>(){"area", "line", "candle", "bar"};
+
+    private string _prevInterval = "OneDay";
+
+    private bool _isChart = false;
+
+    private ElementReference _chartElement;
+
+    //private List<Dictionary<string, string>> _klinesData = new List<Dictionary<string, string>>();
+
+    private IJSObjectReference _jsChartModule;
+    private string _currentChartType;
+
+    private DotNetObjectReference<UpdateKlinHelper> _objRef;
+    private bool _isConnected;
+
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await base.OnAfterRenderAsync(firstRender);
+        if (firstRender)
+        {
+            _jsChartModule = await JS.InvokeAsync<IJSObjectReference>("import", "./js/drawChart.js");
+            _objRef = DotNetObjectReference.Create(new UpdateKlinHelper(LastKlin, this));
+
+            _isConnected = true;
+
+            var savedChartType = await _protectedSessionStore.GetAsync<string>("chartType");
+            _currentChartType = savedChartType.Success ? savedChartType.Value : "area";
+        }
+        if (!_isChart && Klines.Any() && _jsChartModule != null && LastKlin != null)
+        {
+
+            if (_currentChartType == "line" || _currentChartType == "area")
+            {
+                await RedrawLine(_currentChartType);
+            }
+            else
+            {
+                await RedrawKlin(_currentChartType);
+            }
+
+            await InvokeAsync(StateHasChanged);
+        }
+        if (LastKlin != null)
+        {
+            _objRef.Value.StreamKlineData = LastKlin;
+        }
+    }
+
+    public async Task RefreshChart()
+    {
+        if (_currentChartType == "line" || _currentChartType == "area")
+        {
+            await RedrawLine(_currentChartType);
+        }
+        else
+        {
+            await RedrawKlin(_currentChartType);
+        }
+    }
+
+    public async Task LoadData()
+    {
+        var data = await ParentRef.LoadHistoricalData();
+        if (data != null)
+        {
+            _objRef.Value.Klines = data;
+        }
+    }
+
+    private async Task RedrawKlin(string type)
+    {
+        _currentChartType = type;
+        //var reloadFlag = false;
+
+        await _protectedSessionStore.SetAsync("chartType", _currentChartType);
+
+        if (Exchange == "BITFINEX")
+        {
+            if (Klines.Last().CloseTime < DateTime.UtcNow)
+            {
+                await ParentRef.ReloadKlins();
+                //reloadFlag = true;
+                //await InvokeAsync(StateHasChanged);
+            }
+        }
+        else if (Klines.Last().CloseTime < DateTime.Now)
+        {
+            await ParentRef.ReloadKlins();
+            //reloadFlag = true;
+            //await InvokeAsync(StateHasChanged);
+        }
+
+        _isChart = true;
+        _prevInterval = Interval;
+        if (type == "candle")
+        {
+            if (InDayData)
+            {
+                await _jsChartModule.InvokeVoidAsync("showCandleChart", new { Dataset = Klines, InDay = InDayData, Exchange = Exchange, Pair = Pair, Interval = Interval.ToString() }, _chartElement, _objRef);
+            }
+            else
+            {
+                await _jsChartModule.InvokeVoidAsync("showCandleChart", new { Dataset = Klines, InDay = InDayData, Exchange = Exchange, Pair = Pair, Interval = Interval.ToString() }, _chartElement, _objRef);
+            }
+        }
+        if (type == "bar")
+        {
+            if (InDayData)
+            {
+                await _jsChartModule.InvokeVoidAsync("showBarChart", new { Dataset = Klines, InDay = InDayData, Exchange = Exchange, Pair = Pair, Interval = Interval.ToString() }, _chartElement, _objRef);
+            }
+            else
+            {
+                await _jsChartModule.InvokeVoidAsync("showBarChart", new { Dataset = Klines, InDay = InDayData, Exchange = Exchange, Pair = Pair, Interval = Interval.ToString() }, _chartElement, _objRef);
+            }
+        }
+    }
+
+    private async Task RedrawLine(string type)
+    {
+        _currentChartType = type;
+        //var reloadFlag = false;
+
+        await _protectedSessionStore.SetAsync("chartType", _currentChartType);
+
+        if (Exchange == "BITFINEX")
+        {
+            if (Klines.Last().CloseTime < DateTime.UtcNow)
+            {
+                await ParentRef.ReloadKlins();
+                //reloadFlag = true;
+                //await InvokeAsync(StateHasChanged);
+            }
+        }
+        else if (Klines.Last().CloseTime < DateTime.Now)
+        {
+            await ParentRef.ReloadKlins();
+            //reloadFlag = true;
+            //await InvokeAsync(StateHasChanged);
+        }
+
+        _isChart = true;
+        _prevInterval = Interval;
+        if (type == "area")
+        {
+            if (InDayData)
+            {
+                await _jsChartModule.InvokeVoidAsync("showAreaChart", new { Dataset = Klines, InDay = InDayData, Exchange = Exchange, Pair = Pair, Interval = Interval.ToString() }, _chartElement, _objRef);
+
+            }
+            else
+            {
+                await _jsChartModule.InvokeVoidAsync("showAreaChart", new { Dataset = Klines, InDay = InDayData, Exchange = Exchange, Pair = Pair, Interval = Interval.ToString() }, _chartElement, _objRef);
+
+            }
+        }
+        if (type == "line")
+        {
+            if (InDayData)
+            {
+                await _jsChartModule.InvokeVoidAsync("showLineChart", new { Dataset = Klines, InDay = InDayData, Exchange = Exchange, Pair = Pair, Interval = Interval.ToString() }, _chartElement, _objRef);
+
+            }
+            else
+            {
+                await _jsChartModule.InvokeVoidAsync("showLineChart", new { Dataset = Klines, InDay = InDayData, Exchange = Exchange, Pair = Pair, Interval = Interval.ToString() }, _chartElement, _objRef);
+
+            }
+        }
+    }
+
+    public async void Dispose()
+    {
+        GC.SuppressFinalize(this);
+        if (_jsChartModule != null)
+        {
+            await _jsChartModule.InvokeVoidAsync("stopTimerHandle");
+        }
+        if (_objRef != null)
+        {
+            _objRef?.Dispose();
+        }
+    }
+}

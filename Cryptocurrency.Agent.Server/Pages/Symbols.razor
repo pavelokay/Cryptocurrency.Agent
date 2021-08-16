@@ -1,0 +1,418 @@
+﻿@page "/symbols/{exchange?}/{pair?}"
+@using Binance.Net.Interfaces
+@using Binance.Net.Enums
+@using Bitfinex.Net.Objects
+@using Cryptocurrency.Agent.Server.Data
+@using CryptoExchange.Net.Sockets
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+
+@inject BinanceDataProvider _binanceDataProvider
+@inject BitfinexDataProvider _bitfinexDataProvider
+@*@inject CoinbaseDataProvider _coinbaseDataProvider*@
+@inject ProtectedSessionStorage _protectedSessionStore
+
+@implements IAsyncDisposable
+
+@if (Exchange == "BINANCE")
+{
+    <ChooseTimeInterval IntervalsList="Enum.GetValues(typeof(KlineInterval)).Cast<KlineInterval>()" CurrentInterval="@_interval" HandleChangeIntervalCallback="@HandleChangeInterval" />
+}
+@if (Exchange == "BITFINEX")
+{
+    <ChooseTimeInterval IntervalsList="Enum.GetValues(typeof(TimeFrame)).Cast<TimeFrame>()" CurrentInterval="@_interval" HandleChangeIntervalCallback="@HandleChangeInterval" />
+}
+
+
+@if (_lastKlin != null)
+{
+<div class="last-klin-data">
+    <h4>@_lastKlin.Symbol   @Exchange</h4>
+
+    <p>
+        <span class="symbols-last-klin-price">@(_lastKlin.Data.Close.ToString("F2")+ "     ")</span>
+        @if (_lastKlin.Data.Close > _lastKlin.Data.Open)
+        {
+            <span class="symbols-last-klin-change">+@((_lastKlin.Data.Close-_lastKlin.Data.Open).ToString("F2")) (+@(((_lastKlin.Data.Close - _lastKlin.Data.Open)/(_lastKlin.Data.Open / 100)).ToString("F2")) %)</span>
+        }
+        else if (_lastKlin.Data.Close < _lastKlin.Data.Open)
+        {
+            <span class="symbols-last-klin-change">@((_lastKlin.Data.Close-_lastKlin.Data.Open).ToString("F2")) (@(((_lastKlin.Data.Close - _lastKlin.Data.Open)/(_lastKlin.Data.Open / 100)).ToString("F2")) %)</span>
+        }
+        <span class="symbols-last-klin-open">Klin open @_lastKlin.Data.Open.ToString("F2")</span>
+        <span class="symbols-last-klin-volume">Volume @_lastKlin.Data.BaseVolume.ToString("F2")</span>
+        <span class="symbols-last-klin-range">Day range @_lastKlin.Data.Open.ToString("F2") - @_lastKlin.Data.High.ToString("F2")</span>
+    </p>
+</div>
+}
+else
+{
+    <div class="last-klin-data-loading"></div>
+}
+
+<StockChart @ref="StockChart" Klines="@_klines" InDayData="@_inDayData" Interval="@_interval" Pair="@Pair" LastKlin="@_lastKlin" Exchange="@Exchange" ParentRef="@this" />
+
+
+@code
+{
+    [Parameter]
+    public string Pair { get; set; }
+    [Parameter]
+    public string Exchange { get; set; }
+
+    private StockChart StockChart;
+
+    private List<KlinesData> _klines = new List<KlinesData>();
+
+    private StreamKlinData _lastKlin;
+    private string _interval;
+    private bool _inDayData;
+    private UpdateSubscription _subscription;
+    private bool _isConnected = false;
+
+
+    private Dictionary<string, TimeSpan> _intervalValues = new Dictionary<string, TimeSpan>
+    {
+        { "OneMonth", new TimeSpan(31, 0, 0, 0) },
+        { "TwoWeek", new TimeSpan(14, 0, 0, 0) },
+        { "OneWeek", new TimeSpan(7, 0, 0, 0) },
+        { "ThreeDay", new TimeSpan(3, 0, 0, 0) },
+        { "OneDay", new TimeSpan(1, 0, 0, 0) },
+        { "TwelveHour", new TimeSpan(12, 0, 0) },
+        { "EightHour", new TimeSpan(8, 0, 0) },
+        { "SixHour", new TimeSpan(6, 0, 0) },
+        { "FourHour", new TimeSpan(4, 0, 0) },
+        { "ThreeHour", new TimeSpan(3, 0, 0) },
+        { "TwoHour", new TimeSpan(2, 0, 0) },
+        { "OneHour", new TimeSpan(1, 0, 0) },
+        { "FortyFiveMinutes", new TimeSpan(0, 45, 0) },
+        { "ThirtyMinutes", new TimeSpan(0, 30, 0) },
+        { "FifteenMinutes", new TimeSpan(0, 15, 0) },
+        { "FiveMinutes", new TimeSpan(0, 5, 0) },
+        { "ThreeMinutes", new TimeSpan(0, 3, 0) },
+        { "FortyFiveMinute", new TimeSpan(0, 45, 0) },
+        { "ThirtyMinute", new TimeSpan(0, 30, 0) },
+        { "FifteenMinute", new TimeSpan(0, 15, 0) },
+        { "FiveMinute", new TimeSpan(0, 5, 0) },
+        { "ThreeMinute", new TimeSpan(0, 3, 0) },
+        { "OneMinute", new TimeSpan(0, 1, 0) }
+    };
+
+    protected override void OnInitialized()
+    {
+        Pair = Pair ?? "BTCUSDT";
+        Exchange = Exchange ?? "BINANCE";
+        //_inDayData = false;
+        //_interval = savedInterval.Success ? savedInterval.Value : KlineInterval.OneDay;
+        //await GetData();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _isConnected = true;
+            var savedInterval = await _protectedSessionStore.GetAsync<string>("interval");
+            _interval = savedInterval.Success ? savedInterval.Value : "OneDay";
+
+            await GetData();
+        }
+    }
+
+    private async Task GetData(bool historicalData = false)
+    {
+        DateTime startTime = DateTime.Now;
+        DateTime endTime = DateTime.Now;
+        _inDayData = false;
+        TimeFrame timeFrame = TimeFrame.OneDay;
+        KlineInterval klineInterval = KlineInterval.OneDay;
+        if (historicalData && _klines.Any())
+        {
+            startTime = _klines.FirstOrDefault().CloseTime;
+            endTime = _klines.FirstOrDefault().CloseTime;
+        }
+        switch (_interval)
+        {
+            case "OneMonth":
+                startTime = startTime.AddDays(-5200);
+                timeFrame = TimeFrame.OneMonth;
+                klineInterval = KlineInterval.OneMonth;
+                break;
+            case "TwoWeek":
+                startTime = startTime.AddDays(-4200);
+                timeFrame = TimeFrame.FourteenDay;
+                break;
+            case "OneWeek":
+                startTime = startTime.AddDays(-4000);
+                timeFrame = TimeFrame.SevenDay;
+                klineInterval = KlineInterval.OneWeek;
+                break;
+            case "ThreeDay":
+                startTime = startTime.AddDays(-2000);
+                klineInterval = KlineInterval.ThreeDay;
+                break;
+            case "OneDay":
+                startTime = startTime.AddDays(-650);
+                timeFrame = TimeFrame.OneDay;
+                klineInterval = KlineInterval.OneDay;
+                break;
+            case "TwelveHour":
+                startTime = startTime.AddHours(-7200);
+                timeFrame = TimeFrame.TwelveHour;
+                klineInterval = KlineInterval.TwelveHour;
+                _inDayData = true;
+                break;
+            case "EightHour":
+                startTime = startTime.AddHours(-4800); ;
+                klineInterval = KlineInterval.EightHour;
+                _inDayData = true;
+                break;
+            case "SixHour":
+                startTime = startTime.AddHours(-3600);
+                timeFrame = TimeFrame.SixHour;
+                klineInterval = KlineInterval.SixHour;
+                _inDayData = true;
+                break;
+            case "FourHour":
+                startTime = startTime.AddHours(-2400);
+                klineInterval = KlineInterval.FourHour;
+                _inDayData = true;
+                break;
+            case "ThreeHour":
+                startTime = startTime.AddHours(-1800);
+                timeFrame = TimeFrame.ThreeHour;
+                _inDayData = true;
+                break;
+            case "TwoHour":
+                startTime = startTime.AddHours(-1200);
+                klineInterval = KlineInterval.TwoHour;
+                _inDayData = true;
+                break;
+            case "OneHour":
+                startTime = startTime.AddHours(-600);
+                timeFrame = TimeFrame.OneHour;
+                klineInterval = KlineInterval.OneHour;
+                _inDayData = true;
+                break;
+            case "FortyFiveMinutes":
+                startTime = startTime.AddHours(-400);
+                _inDayData = true;
+                break;
+            case "ThirtyMinutes":
+                startTime = startTime.AddHours(-325);
+                timeFrame = TimeFrame.ThirtyMinute;
+                klineInterval = KlineInterval.ThirtyMinutes;
+                _inDayData = true;
+                break;
+            case "FifteenMinutes":
+                startTime = startTime.AddHours(-220);
+                timeFrame = TimeFrame.FifteenMinute;
+                klineInterval = KlineInterval.FifteenMinutes;
+                _inDayData = true;
+                break;
+            case "FiveMinutes":
+                startTime = startTime.AddHours(-60);
+                timeFrame = TimeFrame.FiveMinute;
+                klineInterval = KlineInterval.FiveMinutes;
+                _inDayData = true;
+                break;
+            case "ThreeMinutes":
+                startTime = startTime.AddHours(-45);
+                klineInterval = KlineInterval.ThreeMinutes;
+                _inDayData = true;
+                break;
+            case "OneMinute":
+                startTime = startTime.AddHours(-15);
+                timeFrame = TimeFrame.OneMinute;
+                klineInterval = KlineInterval.OneMinute;
+                _inDayData = true;
+                break;
+            default:
+                startTime = startTime.AddHours(-10);
+                break;
+        }
+
+        await _protectedSessionStore.SetAsync("interval", _interval);
+
+        if (Exchange == "BINANCE")
+        {
+            var callResult = await _binanceDataProvider.GetPairKlines(Pair, klineInterval, startTime, endTime, 900);
+            if (callResult)
+            {
+                List<KlinesData> oldData = new List<KlinesData>();
+                if (historicalData)
+                {
+                    oldData = _klines;
+                }
+                _klines = new List<KlinesData>();
+                var i = 0;
+                foreach (var klin in callResult.Data)
+                {
+                    if (i != 0)
+                    {
+                        if (callResult.Data.ElementAt(i - 1).CloseTime > callResult.Data.ElementAt(i).CloseTime)
+                        {
+                            i++;
+                            continue;
+                        }
+                    }
+                    _klines.Add(ObjectMapper.Mapper.Map<KlinesData>(klin));
+                    i++;
+                }
+                if (historicalData)
+                {
+                    _klines.Remove(_klines.Last());
+                    _klines.AddRange(oldData);
+                }
+            }
+            if (_subscription == null)
+            {
+                var subResult = await _binanceDataProvider.SubscribePairCandleUpdates(Pair, klineInterval, HandleBinanceKlineUpdates);
+                if (subResult)
+                {
+                    _subscription = subResult.Data;
+                }
+            }
+        }
+        if (Exchange == "BITFINEX")
+        {
+            var bitfinexPair = Pair.StartsWith('t') ? Pair : "t" + Pair;
+            var callResult = await _bitfinexDataProvider.GetPairKlines(bitfinexPair, timeFrame, startTime, endTime, 100);
+            if (callResult)
+            {
+                List<KlinesData> oldData = new List<KlinesData>();
+                if (historicalData)
+                {
+                    oldData = _klines;
+                }
+                _klines = new List<KlinesData>();
+                var i = 0;
+                var BitfinexDataList = callResult.Data.Reverse();
+                foreach (var klin in BitfinexDataList)
+                {
+                    if (i != 0)
+                    {
+                        if (BitfinexDataList.ElementAt(i - 1).Timestamp > BitfinexDataList.ElementAt(i).Timestamp)
+                        {
+                            i++;
+                            continue;
+                        }
+                    }
+                    _klines.Add(ObjectMapper.Mapper.Map<KlinesData>(klin));
+                    i++;
+                }
+                if (historicalData)
+                {
+                    _klines.Remove(_klines.Last());
+                    _klines.AddRange(oldData);
+                }
+            }
+
+            if (_subscription == null)
+            {
+                var subResult = await _bitfinexDataProvider.SubscribePairCandleUpdates(bitfinexPair, timeFrame, HandleBitfinexKlineUpdates);
+                if (subResult)
+                {
+                    _subscription = subResult.Data;
+                }
+            }
+        }
+    }
+
+    private void HandleBinanceKlineUpdates(IBinanceStreamKlineData klin)
+    {
+        if (klin != null)
+        {
+            _lastKlin = ObjectMapper.Mapper.Map<StreamKlinData>(klin);
+            InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private void HandleBitfinexKlineUpdates(IEnumerable<BitfinexKline>klins)
+    {
+        if (klins.Any())
+        {
+            _lastKlin = new StreamKlinData();
+            _lastKlin.Symbol = Pair;
+            _lastKlin.Data = ObjectMapper.Mapper.Map<StreamKlin>(klins.First());
+
+            DateTime nextCloseTime;
+            if (_interval == "OneMonth")
+            {
+                nextCloseTime = _lastKlin.Data.CloseTime.AddMonths(1);
+            }
+            else
+            {
+                nextCloseTime = _lastKlin.Data.CloseTime + _intervalValues[_interval];
+            }
+
+            if (nextCloseTime - DateTime.UtcNow < TimeSpan.FromSeconds(1))
+            {
+                _lastKlin.Data.Final = true;
+            }
+            else
+            {
+                _lastKlin.Data.Final = false;
+            }
+            InvokeAsync(StateHasChanged);
+        }
+    }
+
+    public async Task<List<KlinesData>> LoadHistoricalData()
+    {
+        var oldCount = _klines.Count();
+        await GetData(true);
+        var newCount = _klines.Count();
+        if (newCount > oldCount)
+        {
+            return _klines.Take(newCount - oldCount).ToList();
+        }
+        return null;
+    }
+
+    public async Task ReloadKlins()
+    {
+        //DateTime startTime;
+        //_inDayData = false;
+        //var callResult = await _dataProvider.GetPairKlines(Pair, _interval, startTime, DateTime.Now, 1000);
+        //if (callResult)
+        //{
+        //    _klines = callResult.Data;
+        //}
+        await GetData();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task HandleChangeInterval(ChangeEventArgs e)
+    {
+        if (Exchange == "BITFINEX")
+        {
+            e.Value = e.Value.ToString() == "SevenDay" ? "OneWeek" : e.Value.ToString();
+            e.Value = e.Value.ToString() == "FourteenDay" ? "TwoWeek" : e.Value.ToString();
+            e.Value = e.Value.ToString() == "ThirtyMinute" ? "ThirtyMinutes" : e.Value.ToString();
+            e.Value = e.Value.ToString() == "FifteenMinute" ? "FifteenMinutes" : e.Value.ToString();
+            e.Value = e.Value.ToString() == "FiveMinute" ? "FiveMinutes" : e.Value.ToString();
+        }
+        _interval = e.Value.ToString();
+
+        //await DisposeAsync();
+        if (_subscription != null)
+        {
+            await _binanceDataProvider.Unsubscribe(_subscription);
+            _subscription = null;
+        }
+
+        await GetData();
+        await InvokeAsync(StateHasChanged);
+        await StockChart.RefreshChart();
+    }
+
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_subscription != null)
+        {
+            await _binanceDataProvider.Unsubscribe(_subscription);
+            _subscription = null;
+        }
+    }
+}

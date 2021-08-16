@@ -1,0 +1,302 @@
+﻿@typeparam TRowData
+@inject NavigationManager _navManager
+
+@if (Mode == "symbols")
+{
+    <table class="table table-hover">
+        <thead class="thead-dark">
+            <tr>
+                <th class="cursor-pointer" scope="col">
+                    <span @onclick="@(e => ApplySort("Name"))">
+                        Cryptocurrency
+                        <span class="fa @(SetSortIcon("Name"))"></span>
+                    </span>
+                    <input class="" placeholder="Filter" @oninput="@(e => HandleFilterChange(e))" />
+
+                </th>
+                <th class="cursor-pointer" scope="col" @onclick="@(e => ApplySort("Quote.USD.MarketCap"))">
+                    Cap
+                    <span class="fa @(SetSortIcon("Quote.USD.MarketCap"))"></span>
+                </th>
+                <th class="cursor-pointer" scope="col" @onclick="@(e => ApplySort("Quote.USD.Price"))">
+                    Price
+                    <span class="fa @(SetSortIcon("Quote.USD.Price"))"></span>
+                </th>
+                <th class="cursor-pointer" scope="col" @onclick="@(e => ApplySort("Quote.USD.PercentChange24h"))">
+                    Change %
+                    <span class="fa @(SetSortIcon("Quote.USD.PercentChange24h"))"></span>
+                </th>
+                <th class="cursor-pointer" scope="col" @onclick="@(e => ApplySort("CirculatingSupply"))">
+                    Circulation
+                    <span class="fa @(SetSortIcon("CirculatingSupply"))"></span>
+                </th>
+                <th class="cursor-pointer" scope="col" @onclick="@(e => ApplySort("Quote.USD.Volume24h"))">
+                    Volume
+                    <span class="fa @(SetSortIcon("Quote.USD.Volume24h"))"></span>
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in _paginatedItems@*.Where(x => IsVisible(x))*@)
+            {
+                var link = "cryptocurrencies/" + GetPropValue(item, "Symbol");
+                var quote = item.GetType().GetProperty("Quote").GetValue(item, null);
+                var usdQuote = quote.GetType().GetProperty("USD").GetValue(quote, null);
+            <tr class="cursor-pointer" @onclick="@(e => _navManager.NavigateTo(link))">
+                @* TO DO вместо ссылки в конце добавить ссылку а всю строку *@
+                <th scope="row">@GetPropValue(item, "Name")</th>
+                @*<td>@GetPropValue(item, "Quote.USD.MarketCap")</td>*@
+                <td>$ @Decimal.Parse(GetPropValue(usdQuote, "MarketCap").ToString()).ToString("F0")</td>
+                <td>$ @Decimal.Parse(GetPropValue(usdQuote, "Price").ToString()).ToString("F2")</td>
+                <td>@Decimal.Parse(GetPropValue(usdQuote, "PercentChange24h").ToString()).ToString("F2")%</td>
+                <td>@Decimal.Parse(GetPropValue(item, "CirculatingSupply").ToString()).ToString("F0") @GetPropValue(item, "Symbol")</td>
+                <td>$ @Decimal.Parse(GetPropValue(usdQuote, "Volume24h").ToString()).ToString("F2")</td>
+            </tr>
+            }
+        </tbody>
+    </table>
+}
+@if (Mode == "tickers")
+{
+    <table class="table table-hover">
+        <thead class="thead-dark">
+            <tr>
+                <th class="cursor-pointer" scope="col">
+                    <span @onclick="@(e => ApplySort("Symbol"))">
+                        Symbol
+                        <span class="fa @(SetSortIcon("Symbol"))"></span>
+                    </span>
+                    <input class="" placeholder="Filter" @oninput="@(e => HandleFilterChange(e))" />
+
+                </th>
+                <th class="cursor-pointer" scope="col" @onclick="@(e => ApplySort("Exchange"))">
+                    Exchange
+                    <span class="fa @(SetSortIcon("Exchange"))"></span>
+                </th>
+                <th class="cursor-pointer" scope="col" @onclick="@(e => ApplySort("LastPrice"))">
+                    Price
+                    <span class="fa @(SetSortIcon("LastPrice"))"></span>
+                </th>
+                <th class="cursor-pointer" scope="col" @onclick="@(e => ApplySort("High"))">
+                    High
+                    <span class="fa @(SetSortIcon("High"))"></span>
+                </th>
+                <th class="cursor-pointer" scope="col" @onclick="@(e => ApplySort("Low"))">
+                    Low
+                    <span class="fa @(SetSortIcon("Low"))"></span>
+                </th>
+                <th class="cursor-pointer" scope="col" @onclick="@(e => ApplySort("PriceChangePercent"))">
+                    Change %
+                    <span class="fa @(SetSortIcon("PriceChangePercent"))"></span>
+                </th>
+                <th class="cursor-pointer" scope="col" @onclick="@(e => ApplySort("BaseVolume"))">
+                    Volume
+                    <span class="fa @(SetSortIcon("BaseVolume"))"></span>
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in _paginatedItems@*.Where(x => IsVisible(x))*@)
+            {
+
+                var link = "symbols/" + GetPropValue(item, "Exchange").ToString().ToUpper() + "/" + GetPropValue(item, "Symbol");
+            <tr class="cursor-pointer" @onclick="@(e => _navManager.NavigateTo(link))">
+                <th scope="row">@GetPropValue(item, "Symbol")</th>
+                @*<td>@tick.LastPrice.ToString("F4") | @tick.PriceChange.ToString("F4") (@tick.PriceChangePercent.ToString("F3")%)</td>*@
+                <th scope="row">@GetPropValue(item, "Exchange")</th>
+                <td>$ @Decimal.Parse(GetPropValue(item, "LastPrice").ToString()).ToString("F2")</td>
+                <td>$ @Decimal.Parse(GetPropValue(item, "High").ToString()).ToString("F2")</td>
+                <td>$ @Decimal.Parse(GetPropValue(item, "Low").ToString()).ToString("F2")</td>
+                <td>@Decimal.Parse(GetPropValue(item, "PriceChangePercent").ToString()).ToString("F2")%</td>
+                <td>@Decimal.Parse(GetPropValue(item, "BaseVolume").ToString()).ToString("F2") @GetPropValue(item, "Symbol").ToString().Substring(0, 3)</td>
+            </tr>
+            }
+        </tbody>
+    </table>
+}
+
+<div class="row pagination-row">
+    <div class="col-md-8 col-sm-8">
+        @if (_totalPageCount > 1)
+        {
+            <ul class="pagination">
+                @{
+                    string hiddenPrevButton = _currentPageNumber > 1 ? "" : "invisible";
+                    <li class="page-item pagination-prev-button @hiddenPrevButton"><button class="page-link" @onclick="@(e => HandleChangePage(_currentPageNumber-1))">prev</button></li>
+                }
+                @for (var i = _startPageIndex; i <= _endPageIndex; i++)
+                {
+                    var currentIndex = i;
+                    if (i == _currentPageNumber)
+                    {
+                        <li class="page-item active cursor-default"><button class="page-link cursor-default">@i<span class="sr-only">(current)</span></button></li>
+                    }
+                    else
+                    {
+                        <li class="page-item"><button class="page-link" @onclick="@(e => HandleChangePage(currentIndex))">@i</button></li>
+                    }
+                }
+                @{
+                    string hiddenNextButton = _currentPageNumber != _totalPageCount ? "" : "invisible";
+                    <li class="page-item pagination-next-button @hiddenNextButton"><button class="page-link" @onclick="@(e => HandleChangePage(_currentPageNumber+1))">next</button></li>
+                }
+            </ul>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public ICollection<TRowData> Items { get; set; }
+    private ICollection<TRowData> _paginatedItems = new List<TRowData>();
+
+    private IList<GeneralSymbolData> _paginatedSymbols = new List<GeneralSymbolData>();
+    private IList<GeneralTickerData> _paginatedTickers = new List<GeneralTickerData>();
+
+    [Parameter]
+    public string Mode { get; set; }
+
+    private int _currentPageNumber = 1;
+    private int _pageSize = 25;
+    private int _totalPageCount;
+    private int _startPageIndex = 0;
+    private int _endPageIndex = 0;
+
+    private string _currentSort;
+    private bool _isSortedAscending;
+    public string Filter { get; set; }
+
+    protected override void OnInitialized()
+    {
+        if (Mode == "symbols")
+        {
+            _currentSort = "Quote.USD.MarketCap";
+            _isSortedAscending = true;
+            ApplySort("Quote.USD.MarketCap");
+        }
+        else
+        {
+            HandleChangePage(_currentPageNumber);
+        }
+    }
+
+    private bool IsVisible<T>(T item, string propName)
+    {
+        if (string.IsNullOrEmpty(Filter))
+        {
+            return true;
+        }
+        if (item.GetType().GetProperty(propName).GetValue(item, null).ToString().Contains(Filter, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+        return false;
+    }
+
+    private void ApplySort(string sortColumn)
+    {
+        if (sortColumn != _currentSort)
+        {
+            Items = Items.OrderBy(x => GetPropValue(x, sortColumn)).ToList();
+            _isSortedAscending = true;
+            _currentSort = sortColumn;
+        }
+        else
+        {
+            if (_isSortedAscending)
+            {
+                Items = Items.OrderByDescending(x => GetPropValue(x, sortColumn)).ToList();
+            }
+            else
+            {
+                Items = Items.OrderBy(x => GetPropValue(x, sortColumn)).ToList();
+            }
+            _isSortedAscending = !_isSortedAscending;
+        }
+
+        HandleChangePage(_currentPageNumber);
+    }
+
+    private string SetSortIcon(string sortColumn)
+    {
+        if (_currentSort != sortColumn)
+        {
+            return string.Empty;
+        }
+        if (_isSortedAscending)
+        {
+            return "fa-sort-up";
+        }
+        else
+        {
+            return "fa-sort-down";
+        }
+    }
+
+    private void HandleChangePage(int page)
+    {
+        _currentPageNumber = page;
+
+        if (!string.IsNullOrEmpty(Filter))
+        {
+            IEnumerable<TRowData> filteredItems;
+            if (Mode == "symbols"){
+                filteredItems = Items.Where(t => IsVisible(t, "Name"));
+            }
+            else
+            {
+                filteredItems = Items.Where(t => IsVisible(t, "Symbol"));
+            }
+            _paginatedItems = filteredItems.Skip(_pageSize * (_currentPageNumber - 1)).Take(_pageSize).ToList();
+            _totalPageCount = (int)(Math.Ceiling((double)filteredItems.Count() / _pageSize));
+        }
+        else
+        {
+            _paginatedItems = Items.Skip(_pageSize * (_currentPageNumber - 1)).Take(_pageSize).ToList();
+            _totalPageCount = (int)(Math.Ceiling((double)Items.Count() / _pageSize));
+        }
+
+
+        _startPageIndex = _currentPageNumber - 3;
+        _endPageIndex = _currentPageNumber + 2;
+        if (_startPageIndex <= 0)
+        {
+            _endPageIndex -= (_startPageIndex - 1);
+            _startPageIndex = 1;
+        }
+        if (_endPageIndex > _totalPageCount)
+        {
+            _endPageIndex = _totalPageCount;
+            if (_endPageIndex > 6)
+            {
+                _startPageIndex = _endPageIndex - 5;
+            }
+        }
+    }
+
+    private void HandleFilterChange(ChangeEventArgs searchedString)
+    {
+        Filter = searchedString.Value.ToString();
+        HandleChangePage(1);
+    }
+
+    private static object GetPropValue(object obj, string propertyName)
+    {
+        foreach (string part in propertyName.Split('.'))
+        {
+            if (obj == null)
+            {
+                return null;
+            }
+            Type type = obj.GetType();
+            var info = type.GetProperty(part);
+            if (info == null)
+            {
+                return null;
+            }
+            obj = info.GetValue(obj, null);
+        }
+        return obj;
+
+    }
+}

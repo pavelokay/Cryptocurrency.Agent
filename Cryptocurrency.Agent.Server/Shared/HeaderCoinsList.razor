@@ -1,0 +1,179 @@
+﻿@using Binance.Net.Interfaces
+@using Binance.Net.Enums
+@using Binance.Net.Objects
+@using Binance.Net
+@using Bitfinex.Net.Objects
+@using Coinbase.Pro.Models
+@using CryptoExchange.Net.Sockets
+
+@implements IAsyncDisposable
+
+@inject NavigationManager _navManager
+@inject BinanceDataProvider _binanceDataProvider
+@*@inject BitfinexDataProvider _bitfinexDataProvider*@
+
+@if (_tickers.Any() && _isConnected)
+{
+    <div class="card-group header-list">
+        @foreach (var ticker in _tickers)
+        {
+            var link = "symbols/BINANCE/" + ticker.Symbol;
+            <div class="card header-list-card cursor-pointer" @onclick="@(e => _navManager.NavigateTo(link, true))">
+                <div class="card-body header-list-card-body">
+                    <h6 class="card-title header-list-card-title">@ticker.SymbolWithSlash  @ticker.LastPrice.ToString("F2")</h6>
+                    <p class="card-text header-list-text">@ticker.PriceChangePercent.ToString("F2")%  @ticker.PriceChange.ToString("F2")</p>
+                </div>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <div class="spinner spinner__header"></div>
+}
+
+@code {
+    private List<GeneralTickerData> _tickers = new List<GeneralTickerData>();
+    private UpdateSubscription _subscriptionBTCUSD;
+    private UpdateSubscription _subscriptionETHUSD;
+    private UpdateSubscription _subscriptionDOTBTC;
+    private UpdateSubscription _subscriptionETHBTC;
+    private UpdateSubscription _subscriptionXRPBTC;
+    private bool _isConnected = false;
+
+    //private IList<BitfinexSymbolOverview> _bitfinexTickersData = new List<BitfinexSymbolOverview>();
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        //Symbol = Symbol ?? "btc";
+
+        //var bitfinexResult = await _bitfinexDataProvider
+        //if (binanceResult)
+        //{
+        //    _bitfinexTickersData = bitfinexResult.Data.ToList();
+        //}
+
+        //_stats = await _coinbaseDataProvider.GetCoinbase24HPrices();
+        _tickers.Add(new GeneralTickerData { Symbol = "BTCUSDT" });
+        _tickers.Add(new GeneralTickerData { Symbol = "ETHUSDT" });
+        _tickers.Add(new GeneralTickerData { Symbol = "ETHBTC" });
+        _tickers.Add(new GeneralTickerData { Symbol = "DOTBTC" });
+        _tickers.Add(new GeneralTickerData { Symbol = "XRPBTC" });
+
+
+
+        var subResultBTCUSD = await _binanceDataProvider.SubscribePairCandleUpdates("BTCUSDT", KlineInterval.OneDay, HandleTickUpdates);
+        if (subResultBTCUSD)
+        {
+            _subscriptionBTCUSD = subResultBTCUSD.Data;
+        }
+        var subResultETHUSD = await _binanceDataProvider.SubscribePairCandleUpdates("ETHUSDT", KlineInterval.OneDay, HandleTickUpdates);
+        if (subResultETHUSD)
+        {
+            _subscriptionETHUSD = subResultETHUSD.Data;
+        }
+        var subResultDOTBTC = await _binanceDataProvider.SubscribePairCandleUpdates("DOTBTC", KlineInterval.OneDay, HandleTickUpdates);
+        if (subResultDOTBTC)
+        {
+            _subscriptionDOTBTC = subResultDOTBTC.Data;
+        }
+        var subResultETHBTC = await _binanceDataProvider.SubscribePairCandleUpdates("ETHBTC", KlineInterval.OneDay, HandleTickUpdates);
+        if (subResultETHBTC)
+        {
+            _subscriptionETHBTC = subResultETHBTC.Data;
+        }
+        var subResultXRPBTC = await _binanceDataProvider.SubscribePairCandleUpdates("XRPBTC", KlineInterval.OneDay, HandleTickUpdates);
+        if (subResultXRPBTC)
+        {
+            _subscriptionXRPBTC = subResultXRPBTC.Data;
+        }
+        _isConnected = true;
+    }
+
+
+    private void HandleTickUpdates(IBinanceStreamKlineData klin)
+    {
+        var ticker = _tickers.SingleOrDefault(t => t.Symbol == klin.Symbol);
+        if (ticker != null)
+        {
+            ticker.LastPrice = klin.Data.Close;
+            ticker.PriceChangePercent = (klin.Data.Close - klin.Data.Open) / (klin.Data.Open / 100);
+            ticker.PriceChange = klin.Data.Close - klin.Data.Open;
+        }
+        InvokeAsync(StateHasChanged);
+    }
+
+    //private void HandleBTCUSDTickUpdates(IEnumerable<BitfinexKline> ticks)
+    //{
+    //    var ticker = _tickers.SingleOrDefault(t => t.Symbol == "BTC/USD");
+    //    var subTick = ticks.FirstOrDefault();
+    //    if (subTick != null)
+    //    {
+    //        ticker.LastPrice = subTick.Close;
+    //        ticker.PriceChange = subTick.Close - subTick.Open;
+    //        ticker.PriceChangePercent = (subTick.Close - subTick.Open) / (subTick.Open / 100);
+    //    }
+    //    InvokeAsync(StateHasChanged);
+    //}
+    //private void HandleETHUSDTickUpdates(IEnumerable<BitfinexKline> ticks)
+    //{
+    //    var ticker = _tickers.SingleOrDefault(t => t.Symbol == "ETH/USD");
+    //    var subTick = ticks.FirstOrDefault();
+    //    if (subTick != null)
+    //    {
+    //        ticker.LastPrice = subTick.Close;
+    //        ticker.PriceChange = subTick.Close - subTick.Open;
+    //        ticker.PriceChangePercent = (subTick.Close - subTick.Open) / (subTick.Open / 100);
+    //    }
+    //    InvokeAsync(StateHasChanged);
+    //}
+    //private void HandleDOTUSDTickUpdates(IEnumerable<BitfinexKline> ticks)
+    //{
+    //    var ticker = _tickers.SingleOrDefault(t => t.Symbol == "DOT/USD");
+    //    var subTick = ticks.FirstOrDefault();
+    //    if (subTick != null)
+    //    {
+    //        ticker.LastPrice = subTick.Close;
+    //        ticker.PriceChange = subTick.Close - subTick.Open;
+    //        ticker.PriceChangePercent = (subTick.Close - subTick.Open) / (subTick.Open / 100);
+    //    }
+    //    InvokeAsync(StateHasChanged);
+    //}
+    //private void HandleETHBTCTickUpdates(IEnumerable<BitfinexKline> ticks)
+    //{
+    //    var ticker = _tickers.SingleOrDefault(t => t.Symbol == "ETH/BTC");
+    //    var subTick = ticks.FirstOrDefault();
+    //    if (subTick != null)
+    //    {
+    //        ticker.LastPrice = subTick.Close;
+    //        ticker.PriceChange = subTick.Close - subTick.Open;
+    //        ticker.PriceChangePercent = (subTick.Close - subTick.Open) / (subTick.Open / 100);
+    //    }
+    //    InvokeAsync(StateHasChanged);
+    //}
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_subscriptionBTCUSD != null)
+        {
+            await _binanceDataProvider.Unsubscribe(_subscriptionBTCUSD);
+        }
+        if (_subscriptionETHUSD != null)
+        {
+            await _binanceDataProvider.Unsubscribe(_subscriptionETHUSD);
+        }
+        if (_subscriptionDOTBTC != null)
+        {
+            await _binanceDataProvider.Unsubscribe(_subscriptionDOTBTC);
+        }
+        if (_subscriptionETHBTC != null)
+        {
+            await _binanceDataProvider.Unsubscribe(_subscriptionETHBTC);
+        }
+        if (_subscriptionXRPBTC != null)
+        {
+            await _binanceDataProvider.Unsubscribe(_subscriptionXRPBTC);
+        }
+    }
+}
