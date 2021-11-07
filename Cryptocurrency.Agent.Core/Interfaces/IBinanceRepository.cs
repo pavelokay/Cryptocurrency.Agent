@@ -22,6 +22,6 @@ namespace Cryptocurrency.Agent.Core.Interfaces
         Task<CallResult<UpdateSubscription>> SubscribePairCandleUpdates(string pair, KlineInterval interval, Action<IBinanceStreamKlineData> streamHandler);
         Task<WebCallResult<IEnumerable<IBinanceRecentTrade>>> GetPairHistoricalPrices(string pair);
         Task<WebCallResult<IEnumerable<IBinanceKline>>> GetPairKlines(string pair, KlineInterval interval, DateTime? startTime, DateTime? endTime, int? limit);
-        Task Unsubscribe(UpdateSubscription subscription)
+        Task Unsubscribe(UpdateSubscription subscription);
     }
 }
