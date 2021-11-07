@@ -1,7 +1,7 @@
 using System;
 using Xunit;
 
-namespace Cryptocurrency.Agent.UnitTests
+namespace Cryptocurrency.Agent.Application.Tests.UnitTests
 {
     public class UnitTest1
     {
