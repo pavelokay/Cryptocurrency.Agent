@@ -22,6 +22,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Polly;
+using Cryptocurrency.Agent.Infrastructure;
 
 namespace Cryptocurrency.Agent.Server
 {
@@ -51,12 +52,7 @@ namespace Cryptocurrency.Agent.Server
             services.AddRazorPages();
             services.AddServerSideBlazor();
 
-            services.AddHttpClient("CoinMarketCapClient", client =>
-            {
-                client.BaseAddress = new Uri("https://pro-api.coinmarketcap.com/");
-                client.DefaultRequestHeaders.Add("X-CMC_PRO_API_KEY", "b54ca9cc-027e-4281-9894-e7b234f479a0");
-                client.DefaultRequestHeaders.Add("Accept", "application/json");
-            }).AddTransientHttpErrorPolicy(builder => builder.WaitAndRetryAsync(new[]
+            services.AddHttpClient<CoinMarketCapClient>().AddTransientHttpErrorPolicy(builder => builder.WaitAndRetryAsync(new[]
             {
                 TimeSpan.FromSeconds(1),
                 TimeSpan.FromSeconds(5),

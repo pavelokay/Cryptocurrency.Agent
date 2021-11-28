@@ -31,9 +31,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{D2C59D50-3FA
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cryptocurrency.Agent.Core", "src\Cryptocurrency.Agent.Core\Cryptocurrency.Agent.Core.csproj", "{7946CF45-BA12-4D05-93A8-2DE75849B302}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cryptocurrency.Agent.Application", "src\Cryptocurrency.Agent.Application\Cryptocurrency.Agent.Application.csproj", "{29C732F6-323A-4348-8AD1-F01559ACAC53}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cryptocurrency.Agent.Infrastructure", "src\Cryptocurrency.Agent.Infrastructure\Cryptocurrency.Agent.Infrastructure.csproj", "{4D4EE1CB-38B5-41D1-815F-110F420F5360}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cryptocurrency.Agent.Infrastructure", "src\Cryptocurrency.Agent.Application\Cryptocurrency.Agent.Infrastructure.csproj", "{29C732F6-323A-4348-8AD1-F01559ACAC53}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cryptocurrency.Agent.Server", "src\Cryptocurrency.Agent.Server\Cryptocurrency.Agent.Server.csproj", "{7F7AF1E6-C35E-45F3-90CC-4D4C28DB50F6}"
 EndProject
@@ -67,10 +65,6 @@ Global
 		{29C732F6-323A-4348-8AD1-F01559ACAC53}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{29C732F6-323A-4348-8AD1-F01559ACAC53}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{29C732F6-323A-4348-8AD1-F01559ACAC53}.Release|Any CPU.Build.0 = Release|Any CPU
-		{4D4EE1CB-38B5-41D1-815F-110F420F5360}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{4D4EE1CB-38B5-41D1-815F-110F420F5360}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{4D4EE1CB-38B5-41D1-815F-110F420F5360}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{4D4EE1CB-38B5-41D1-815F-110F420F5360}.Release|Any CPU.Build.0 = Release|Any CPU
 		{7F7AF1E6-C35E-45F3-90CC-4D4C28DB50F6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{7F7AF1E6-C35E-45F3-90CC-4D4C28DB50F6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7F7AF1E6-C35E-45F3-90CC-4D4C28DB50F6}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -90,7 +84,6 @@ Global
 		{9512FDC8-38BC-4E06-8DA7-ED33F2CFDF60} = {5B47673F-6461-424B-BD81-22E8DA5300E8}
 		{7946CF45-BA12-4D05-93A8-2DE75849B302} = {D2C59D50-3FA6-11EC-BC24-156F6B3F06DE}
 		{29C732F6-323A-4348-8AD1-F01559ACAC53} = {D2C59D50-3FA6-11EC-BC24-156F6B3F06DE}
-		{4D4EE1CB-38B5-41D1-815F-110F420F5360} = {D2C59D50-3FA6-11EC-BC24-156F6B3F06DE}
 		{7F7AF1E6-C35E-45F3-90CC-4D4C28DB50F6} = {D2C59D50-3FA6-11EC-BC24-156F6B3F06DE}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
