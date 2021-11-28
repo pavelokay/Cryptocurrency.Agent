@@ -14,14 +14,15 @@ namespace Cryptocurrency.Agent.Core.Interfaces
     /// </summary>
     public interface IBinanceRepository
     {
-        Task<IEnumerable<CryptocurrencyTick>> Get24HPrices();
-        Task<IEnumerable<CryptocurrencyTick>> SubscribeAllTickerUpdate(Action<IEnumerable<CryptocurrencyTick>> tickHandler);
+        Task<WebCallResult<IEnumerable<CryptocurrencySymbolOverview>>> Get24HPrices();
+        Task<CallResult<UpdateSubscription>> SubscribeAllTickerUpdates(Action<IEnumerable<CryptocurrencySymbolOverview>> tickHandler);
 
-        Task<CallResult<UpdateSubscription>> SubscribePairTickerUpdates(string pair, Action<CryptocurrencyTick> tickHandler);
+        Task<CallResult<UpdateSubscription>> SubscribePairTickerUpdates(string pair, Action<CryptocurrencySymbolOverview> tickHandler);
 
-        Task<CallResult<UpdateSubscription>> SubscribePairCandleUpdates(string pair, KlineInterval interval, Action<IBinanceStreamKlineData> streamHandler);
-        Task<WebCallResult<IEnumerable<IBinanceRecentTrade>>> GetPairHistoricalPrices(string pair);
-        Task<WebCallResult<IEnumerable<IBinanceKline>>> GetPairKlines(string pair, KlineInterval interval, DateTime? startTime, DateTime? endTime, int? limit);
+        Task<CallResult<UpdateSubscription>> SubscribePairCandleUpdates(string pair, CryptocurrencyDataInterval interval, Action<CryptocurrencyStreamCandleData> streamHandler);
+        Task<WebCallResult<IEnumerable<CryptocurrencyRecentTrade>>> GetPairHistoricalPrices(string pair);
+        Task<WebCallResult<IEnumerable<CryptocurrencyCandleData>>> GetPairKlines(string pair, CryptocurrencyDataInterval interval, DateTime? startTime, DateTime? endTime, int? limit);
         Task Unsubscribe(UpdateSubscription subscription);
+        
     }
 }

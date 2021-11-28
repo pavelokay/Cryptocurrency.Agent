@@ -1,11 +1,11 @@
 using System;
 
-namespace Cryptocurrency.Agent.Core.Entities
+namespace Cryptocurrency.Agent.Application.Models
 {
     /// <summary>
     /// Price statistics for 24 hours
     /// </summary>
-    public class Cryptocurrency24HPrice : CryptocurrencyTicker
+    public class Cryptocurrency24HPriceModel : CryptocurrencyMiniTickModel
     {
         /// <summary>
         /// The actual price change in the last 24 hours

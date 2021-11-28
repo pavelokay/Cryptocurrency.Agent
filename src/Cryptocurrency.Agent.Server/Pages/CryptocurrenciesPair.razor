@@ -50,7 +50,7 @@
             _binanceTickersData = binanceResult.Data.ToList();
         }
         var bitfinexResult = await _bitfinexDataProvider.Get24HPrices();
-        if (binanceResult)
+        if (bitfinexResult)
         {
             _bitfinexTickersData = bitfinexResult.Data.ToList();
         }
@@ -58,6 +58,7 @@
         //_stats = await _coinbaseDataProvider.GetCoinbase24HPrices();
 
         var subResult = await _binanceDataProvider.SubscribeAllTickerUpdates(HandleTickUpdates);
+        
         if (subResult)
         {
             _subscription = subResult.Data;

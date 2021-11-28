@@ -1,11 +1,9 @@
-using System;
-
-namespace Cryptocurrency.Agent.Core.Entities
-{
-    /// <summary>
+ namespace Cryptocurrency.Agent.Application
+ {
+      /// <summary>
     /// Overall statistics of the last 24 hours
     /// </summary>
-    public class CryptocurrencyTick : Cryptocurrency24HPrice{
+    public class CryptocurrencyTickModel : Cryptocurrency24HPriceModel{
 
         /// <summary>
         /// The close price 24 hours ago
@@ -30,4 +28,4 @@ namespace Cryptocurrency.Agent.Core.Entities
         decimal AskQuantity { get; set; }
         
     }
-}
+ }

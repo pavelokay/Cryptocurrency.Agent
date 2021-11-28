@@ -4,4 +4,14 @@
     <TargetFramework>net5.0</TargetFramework>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="binance.net" Version="7.2.6" />
+    <PackageReference Include="bitfinex.net" Version="4.2.4" />
+    <PackageReference Include="cryptoexchange.net" Version="4.2.8" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Cryptocurrency.Agent.Core\Cryptocurrency.Agent.Core.csproj" />
+  </ItemGroup>
+
 </Project>

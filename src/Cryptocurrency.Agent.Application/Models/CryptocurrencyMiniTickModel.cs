@@ -1,8 +1,8 @@
-namespace Cryptocurrency.Agent.Core.Entities{
+namespace Cryptocurrency.Agent.Application.Models{
     /// <summary>
     ///  MiniTick info
     /// </summary>
-    public class CryptocurrencyMiniTick{
+    public class CryptocurrencyMiniTickModel{
         /// <summary>
         /// Symbol
         /// </summary>
