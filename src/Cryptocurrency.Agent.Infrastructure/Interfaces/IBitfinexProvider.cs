@@ -10,14 +10,15 @@ namespace Cryptocurrency.Agent.Infrastructure.Interfaces
 {
     public interface IBitfinexProvider
     {
-        Task<WebCallResult<IEnumerable<CryptocurrencySymbolOverview>>> Get24HPrices();
+        Task<IEnumerable<CryptocurrencySymbolOverview>> GetAllSymbols24HPricesAsync();
+        Task<CryptocurrencySymbolOverview> GetSymbol24HPricesAsync(string symbol);
         //Task<WebCallResult<IEnumerable<BitfinexSymbolOverview>>> GetAllSymbols();
-        Task<CallResult<UpdateSubscription>> SubscribePairTickerUpdates(string pair, Action<DataEvent<CryptocurrencySymbolOverview>> streamHandler);
+        Task<CallResult<UpdateSubscription>> SubscribeSymbolUpdatesAsync(string symbol, Action<DataEvent<BitfinexStreamSymbolOverview>> streamHandler);
 
-        Task<CallResult<UpdateSubscription>> SubscribePairCandleUpdates(string pair, CryptocurrencyDataInterval interval, Action<DataEvent<IEnumerable<CryptocurrencyCandleData>>> streamHandler);
+        Task<CallResult<UpdateSubscription>> SubscribeSymbolCandleUpdatesAsync(string symbol, CryptocurrencyDataInterval interval, Action<DataEvent<IEnumerable<BitfinexKline>>> streamHandler);
 
         // Task<WebCallResult<IEnumerable<IBinanceRecentTrade>>> GetPairHistoricalPrices(string pair);
-        Task<WebCallResult<IEnumerable<CryptocurrencyCandleData>>> GetPairKlines(string pair, CryptocurrencyDataInterval interval, DateTime? startTime, DateTime? endTime, int? limit);
-        Task Unsubscribe(UpdateSubscription subscription);
+        Task<IEnumerable<CryptocurrencyCandleData>> GetSymbolKlinesAsync(string symbol, CryptocurrencyDataInterval interval, DateTime? startTime, DateTime? endTime, int? limit);
+        Task UnsubscribeAsync(UpdateSubscription subscription);
     }
 }

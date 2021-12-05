@@ -7,6 +7,6 @@ namespace Cryptocurrency.Agent.Infrastructure.Interfaces
 {
     public interface ICoinMarketCapProvider
     {
-        Task<List<CoinMarketCapSymbolData>> GetCryptocurrenciesList();
+        Task<List<CoinMarketCapSymbolData>> GetSymbolsDataAsync();
     }
 }

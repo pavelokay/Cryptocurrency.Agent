@@ -5,9 +5,10 @@
   "devDependencies": {
     "gulp": "4.0.2",
     "rimraf": "3.0.2",
-    "gulp-sass": "4.1.0",
+    "gulp-sass": "5.0.1",
     "gulp-uglify": "3.0.2",
     "gulp-cssmin": "0.2.0",
-    "gulp-concat": "2.6.1"
+    "gulp-concat": "2.6.1",
+    "sass": "1.44.0"
   }
 }

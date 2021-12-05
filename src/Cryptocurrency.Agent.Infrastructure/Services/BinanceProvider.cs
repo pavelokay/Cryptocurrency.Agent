@@ -8,52 +8,92 @@ using CryptoExchange.Net.Objects;
 using CryptoExchange.Net.Sockets;
 using Cryptocurrency.Agent.Infrastructure.Interfaces;
 using Cryptocurrency.Agent.Infrastructure.Entities;
+using Cryptocurrency.Agent.Infrastructure.Utils.Mapper;
+using System.Linq;
+using Microsoft.Extensions.Logging;
 
 namespace Cryptocurrency.Agent.Infrastructure.Services
 {
     public class BinanceProvider : IBinanceProvider
     {
-        private IBinanceClient _client;
-        private IBinanceSocketClient _socketClient;
+        private readonly IBinanceClient _client;
+        private readonly IBinanceSocketClient _socketClient;
+        private readonly ILogger<BinanceProvider> _logger;
 
-        public BinanceProvider(IBinanceClient client, IBinanceSocketClient socketClient)
+        public BinanceProvider(IBinanceClient client, IBinanceSocketClient socketClient, ILogger<BinanceProvider> logger)
         {
             _client = client;
             _socketClient = socketClient;
+            _logger = logger;
         }
 
-        public Task<WebCallResult<IEnumerable<CryptocurrencySymbolOverview>>> Get24HPrices()
+        public async Task<IEnumerable<CryptocurrencySymbolOverview>> GetAllSymbols24HPricesAsync()
         {
-            return _client.Spot.Market.GetTickerAsync();
+            var response = await _client.Spot.Market.GetTickersAsync();
+            if (response.Success)
+            {
+                var binanceTickersData = response.Data;
+                return ObjectMapper.Mapper.Map<IEnumerable<CryptocurrencySymbolOverview>>(binanceTickersData);    
+            }
+            else
+            {
+                _logger.LogError($"Don't get data from Binance, error: {response.Error.Message}");
+                return null;
+            }
         }
 
-        public Task<CallResult<UpdateSubscription>> SubscribeAllTickerUpdates(Action<IEnumerable<CryptocurrencySymbolOverview>> tickHandler)
+        public async Task<CryptocurrencySymbolOverview> GetSymbol24HPricesAsync(string symbol)
         {
-            return _socketClient.Spot.SubscribeToAllSymbolTickerUpdatesAsync(tickHandler);
+            var response = await _client.Spot.Market.GetTickerAsync(symbol);
+            if (response.Success)
+            {
+                var binanceTickersData = response.Data;
+                return ObjectMapper.Mapper.Map<CryptocurrencySymbolOverview>(binanceTickersData);    
+            }
+            else
+            {
+                _logger.LogError($"Don't get data from Binance, error: {response.Error.Message}");
+                return null;
+            }
         }
 
-        public Task<CallResult<UpdateSubscription>> SubscribePairTickerUpdates(string pair, Action<CryptocurrencySymbolOverview> tickHandler)
+        public async Task<CallResult<UpdateSubscription>> SubscribeAllSymbolsUpdatesAsync(Action<DataEvent<IEnumerable<IBinanceTick>>> tickHandler)
         {
-            return _socketClient.Spot.SubscribeToSymbolTickerUpdatesAsync(pair, tickHandler);
+            return await _socketClient.Spot.SubscribeToAllSymbolTickerUpdatesAsync(tickHandler);
         }
 
-        public Task<CallResult<UpdateSubscription>> SubscribePairCandleUpdates(string pair, CryptocurrencyDataInterval interval, Action<CryptocurrencyStreamCandleData> streamHandler)
+        public async Task<CallResult<UpdateSubscription>> SubscribeSymbolUpdatesAsync(string pair, Action<DataEvent<IBinanceTick>> tickHandler)
         {
-            return _socketClient.Spot.SubscribeToKlineUpdatesAsync(pair, interval, streamHandler);
+            return await _socketClient.Spot.SubscribeToSymbolTickerUpdatesAsync(pair, tickHandler);
         }
 
-        public Task<WebCallResult<IEnumerable<CryptocurrencyRecentTrade>>> GetPairHistoricalPrices(string pair)
+        public async Task<CallResult<UpdateSubscription>> SubscribeSymbolCandleUpdatesAsync(string symbol, CryptocurrencyDataInterval interval, Action<DataEvent<IBinanceStreamKlineData>> streamHandler)
         {
-            return _client.Spot.Market.GetHistoricalSymbolTradesAsync(pair, 10);
+            var intervalBinance = ObjectMapper.Mapper.Map<KlineInterval>(interval);
+            return await _socketClient.Spot.SubscribeToKlineUpdatesAsync(symbol, intervalBinance, streamHandler);
         }
-        public Task<WebCallResult<IEnumerable<CryptocurrencyCandleData>>> GetPairKlines(string pair, CryptocurrencyDataInterval interval, DateTime? startTime, DateTime? endTime, int? limit)
+        public async Task<IEnumerable<CryptocurrencyCandleData>> GetSymbolKlinesAsync(string symbol, CryptocurrencyDataInterval interval, DateTime? startTime, DateTime? endTime, int? limit)
         {
-            return _client.Spot.Market.GetKlinesAsync(pair, interval, startTime, endTime, limit);
+            var intervalBinance = ObjectMapper.Mapper.Map<KlineInterval>(interval);
+            startTime = startTime.HasValue ? startTime : DateTime.Today.AddDays(-2);
+            endTime = endTime.HasValue ? endTime : DateTime.Now;
+
+            var response = await _client.Spot.Market.GetKlinesAsync(symbol, intervalBinance, startTime, endTime, limit);
+            if (response.Success)
+            {
+                var binanceCandlesData = response.Data;
+                return ObjectMapper.Mapper.Map<IEnumerable<CryptocurrencyCandleData>>(binanceCandlesData);
+            }
+            else
+            {
+                _logger.LogError($"Don't get data from Binance, error: {response.Error.Message}");
+                return null;
+            }
         }
 
-        public async Task Unsubscribe(UpdateSubscription subscription)
+        public async Task UnsubscribeAsync(UpdateSubscription subscription)
         {
-            await _socketClient.Unsubscribe(subscription);
+            await _socketClient.UnsubscribeAsync(subscription);
         }
     }
 }

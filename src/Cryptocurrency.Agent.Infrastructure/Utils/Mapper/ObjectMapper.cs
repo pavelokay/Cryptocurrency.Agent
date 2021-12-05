@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using AutoMapper;
 using Binance.Net.Interfaces;
 using Bitfinex.Net.Objects;
+using Cryptocurrency.Agent.Infrastructure.Entities;
 
 namespace Cryptocurrency.Agent.Infrastructure.Utils.Mapper
 {
@@ -27,30 +28,25 @@ namespace Cryptocurrency.Agent.Infrastructure.Utils.Mapper
         {
             public AspnetRunDtoMapper()
             {
-                CreateMap<IBinanceKline, KlinesData>().ReverseMap();
-                CreateMap<BitfinexKline, KlinesData>()
-                    .ForMember("CloseTime", opt => opt.MapFrom(c => c.Timestamp))
-                    .ForMember("BaseVolume", opt => opt.MapFrom(c => c.Volume))
-                    .ReverseMap();
+                CreateMap<IBinanceTick, CryptocurrencySymbolOverview>().ReverseMap();
+                CreateMap<IBinanceKline, CryptocurrencyCandleData>().ReverseMap();
 
-                CreateMap<BitfinexKline, StreamKlin>()
-                    .ForMember("CloseTime", opt => opt.MapFrom(c => c.Timestamp))
-                    .ForMember("BaseVolume", opt => opt.MapFrom(c => c.Volume))
-                    .ReverseMap();
-
-                CreateMap<IBinanceStreamKlineData, StreamKlinData>()
+                CreateMap<IBinanceStreamKlineData, CryptocurrencyStreamCandleData>()
                     .ForMember("Data", opt => opt.MapFrom(c => c.Data))
                     .ForMember("Symbol", opt => opt.MapFrom(c => c.Symbol))
                     .ReverseMap();
-                CreateMap<IBinanceStreamKline, StreamKlin>().ReverseMap();
+                CreateMap<IBinanceStreamKline, CryptocurrencyStreamCandle>().ReverseMap();
 
+                CreateMap<BitfinexSymbolOverview, CryptocurrencySymbolOverview>().ReverseMap();
+                CreateMap<BitfinexKline, CryptocurrencyCandleData>()
+                    .ForMember("CloseTime", opt => opt.MapFrom(c => c.Timestamp))
+                    .ForMember("BaseVolume", opt => opt.MapFrom(c => c.Volume))
+                    .ReverseMap();
 
-                //CreateMap<Category, CategoryModel>().ReverseMap();
-                //CreateMap<Wishlist, WishlistModel>().ReverseMap();
-                //CreateMap<Compare, CompareModel>().ReverseMap();
-                //CreateMap<Order, OrderModel>().ReverseMap();
-                //CreateMap<Cart, CartModel>().ReverseMap();
-                //CreateMap<CartItem, CartItemModel>().ReverseMap();
+                CreateMap<BitfinexKline, CryptocurrencyStreamCandle>()
+                    .ForMember("CloseTime", opt => opt.MapFrom(c => c.Timestamp))
+                    .ForMember("BaseVolume", opt => opt.MapFrom(c => c.Volume))
+                    .ReverseMap();
             }
         }
     }

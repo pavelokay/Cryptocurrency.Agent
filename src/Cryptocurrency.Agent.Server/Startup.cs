@@ -96,7 +96,7 @@ namespace Cryptocurrency.Agent.Server
 
             services.AddTransient<IBitfinexClient, BitfinexClient>();
             services.AddTransient<IBitfinexSocketClient, BitfinexSocketClient>();
-
+            
             //services.AddTransient<ICoinbaseProClient, CoinbaseProClient>();
 
             services.AddSingleton<BinanceDataProvider>();
